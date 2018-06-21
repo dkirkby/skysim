@@ -21,6 +21,9 @@ MANIFEST
 docs/api
 docs/_build
 
+# VSCode editor project files
+.vscode
+
 # Eclipse editor project files
 .project
 .pydevproject
