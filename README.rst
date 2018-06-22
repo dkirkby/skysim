@@ -5,12 +5,17 @@ Simulate the optical spectrum of sky brightness and extinction
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
+.. image:: //readthedocs.org/projects/skysim/badge/?version=latest
+    :target: https://skysim.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 .. image:: https://travis-ci.org/dkirkby/skysim.svg?branch=master
     :target: https://travis-ci.org/dkirkby/skysim
+    :alt: Continuous Integration Status
 
 .. image:: https://coveralls.io/repos/github/dkirkby/skysim/badge.svg?branch=master
     :target: https://coveralls.io/github/dkirkby/skysim?branch=master
-
+    :alt: Unit Test Coverage Status
 
 Implements models described in:
 
