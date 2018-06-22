@@ -5,6 +5,7 @@ channels:
 
 dependencies:
     - astropy
+    - sphinx-astropy
     - Cython
     - matplotlib
     - numpy
