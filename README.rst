@@ -8,6 +8,10 @@ Simulate the optical spectrum of sky brightness and extinction
 .. image:: https://travis-ci.org/dkirkby/skysim.svg?branch=master
     :target: https://travis-ci.org/dkirkby/skysim
 
+.. image:: https://coveralls.io/repos/github/dkirkby/skysim/badge.svg?branch=master
+    :target: https://coveralls.io/github/dkirkby/skysim?branch=master
+
+
 Implements models described in:
 
 * Noll 2012, "An atmospheric radiation model for Cerro Paranal. I. The optical spectral range",
