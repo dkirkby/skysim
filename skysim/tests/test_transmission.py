@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from ..transmission import tau0R
+from ..transmission import tau0R, tau0M
 
 
 def test_tau0R():
@@ -15,3 +15,11 @@ def test_tau0R():
     with pytest.raises(ValueError):
         tau0R(lam, 1000. * np.ones(2), 1.0)
     assert tau0R(lam, 1000. * np.ones((2, 1)), 1.0).shape == (2, 5)
+
+
+def test_tau0M():
+    assert np.allclose(tau0M(0.5), 0.031163083715190009)
+    lam = np.linspace(0.3, 1.1, 5)
+    assert np.allclose(
+        np.round(tau0M(lam), 5),
+        [0.0424, 0.03116, 0.01959, 0.01385, 0.01050])
