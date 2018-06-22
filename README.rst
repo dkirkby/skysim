@@ -5,8 +5,11 @@ Simulate the optical spectrum of sky brightness and extinction
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-
-
+Uses models described in the following papers:
+* Noll 2012, "An atmospheric radiation model for Cerro Paranal. I. The optical spectral range",
+  `10.1051/0004-6361/201219040 <https://doi.org/10.1051/0004-6361/201219040>`_
+* Leinert 1998, "The 1997 reference of diffuse night sky brightness",
+  `10.1051/aas:1998105 <https://doi.org/10.1051/aas:1998105>`_ 
 
 License
 -------
