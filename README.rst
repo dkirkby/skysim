@@ -5,7 +5,10 @@ Simulate the optical spectrum of sky brightness and extinction
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-Uses models described in the following papers:
+.. image:: https://travis-ci.org/dkirkby/skysim.svg?branch=master
+    :target: https://travis-ci.org/dkirkby/skysim
+
+Implements models described in:
 
 * Noll 2012, "An atmospheric radiation model for Cerro Paranal. I. The optical spectral range",
   `10.1051/0004-6361/201219040 <https://doi.org/10.1051/0004-6361/201219040>`_
