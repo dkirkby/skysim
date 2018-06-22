@@ -10,5 +10,6 @@ dependencies:
     - matplotlib
     - numpy
     - scipy
+    - configparser
 #   - pip:
 #       - dependency_from_pip
