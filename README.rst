@@ -5,7 +5,7 @@ Simulate the optical spectrum of sky brightness and extinction
     :target: http://www.astropy.org
     :alt: Powered by Astropy Badge
 
-.. image:: //readthedocs.org/projects/skysim/badge/?version=latest
+.. image:: https://readthedocs.org/projects/skysim/badge/?version=latest
     :target: https://skysim.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
