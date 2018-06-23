@@ -1,6 +1,7 @@
 [run]
 source = {packagename}
 omit =
+   {packagename}/scripts/prepare_data.py
    {packagename}/_astropy_init*
    {packagename}/conftest*
    {packagename}/cython_version*
