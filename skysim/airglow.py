@@ -97,9 +97,6 @@ def get_airglow(lam, z, p=744., H=2.64, Rayleigh=True, Mie=True, absorption=True
         line *= transmission
     # Resample to output wavelength grid for scattering calculations.
     ag_lam = atm['wavelength'].data.copy()
-    #################
-    ag_lam *= 1e3
-    #################
     cont = skysim.utils.resample.resample_density(lam, ag_lam, cont)
     line = skysim.utils.resample.resample_density(lam, ag_lam, line)
     # Apply scattering effects.
