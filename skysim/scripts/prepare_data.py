@@ -20,7 +20,7 @@ import astropy.units as u
 import skysim.airglow
 
 
-def prepare_atmosphere(args=None):
+def prepare_atmosphere(overwrite=True):
     """Call the ESO SkyCalc CLI and save atmospheric data used by this package.
 
     Data consists of zenith transmission curves and extinction-corrected
@@ -28,11 +28,21 @@ def prepare_atmosphere(args=None):
 
     Data are saved to a FITS file data/atmosphere.fits relative to this
     package's installation directory.
+
+    Parameters
+    ----------
+    overwrite : bool
+        When True, will overwrite an existing file.
     """
+    path = astropy.utils.data._find_pkg_data_path('../data/atmosphere.fits')
+    if not overwrite and os.path.exists(path):
+        print('Atmosphere file exists and overwrite is False.')
+        return
     try:
         import skycalc_cli.skycalc
     except ImportError as e:
         print('The skycalc_cli package is not installed.')
+        return
     # Specify how SkyCalc will be called.
     params = dict(
         airmass=1.,
@@ -51,19 +61,19 @@ def prepare_atmosphere(args=None):
     print('Calling the ESO SkyCalc...')
     sc = skycalc_cli.skycalc.SkyModel()
     sc.callwith(params)
-    with tempfile.NamedTemporaryFile() as f:
-        f.write(sc.data)
-        f.flush()
-        t = astropy.table.Table.read(f.name)
+    with tempfile.NamedTemporaryFile(mode='w+b', buffering=0) as tmpf:
+        tmpf.write(sc.data)
+        t = astropy.table.Table.read(tmpf.name)
         # Build a new table with only the columns we need.
         tnew = astropy.table.Table()
         tnew['wavelength'] = astropy.table.Column(
-            t['lam'], description='Vacuum wavelength in nm', unit='nm')
+            1e3 * t['lam'].data, description='Vacuum wavelength in nm',
+            unit='nm')
         tnew['trans_ma'] = astropy.table.Column(
-            t['trans_ma'], description=
+            t['trans_ma'].data, description=
             'Zenith transmission fraction for molecular absorption')
         tnew['trans_o3'] = astropy.table.Column(
-            t['trans_o3'], description=
+            t['trans_o3'].data, description=
             'Zenith transmission fraction for ozone absorption')
         # Undo absorption and scattering extinction of airglow.
         ael = t['flux_ael']
@@ -80,18 +90,17 @@ def prepare_atmosphere(args=None):
         ael /= scattering
         # Convert from flux density per um to per nm and save.
         tnew['airglow_cont'] = astropy.table.Column(
-            1e3 * arc, description='Unextincted airglow continuum',
-            unit='ph / (arcsec2 m2 s um)')
+            1e-3 * arc, description='Unextincted airglow continuum',
+            unit='ph / (arcsec2 m2 s nm)')
         tnew['airglow_line'] = astropy.table.Column(
-            1e3 * arc, description='Unextincted airglow narrow lines',
-            unit='ph / (arcsec2 m2 s um)')
+            1e-3 * ael, description='Unextincted airglow narrow lines',
+            unit='ph / (arcsec2 m2 s nm)')
     # Save the new table.
-    path = astropy.utils.data._find_pkg_data_path('../data/atmosphere.fits')
-    tnew.write(path)
+    tnew.write(path, overwrite=overwrite)
     print(f'Wrote {len(tnew)} rows to {path}')
 
 
-def prepare_solarspec():
+def prepare_solarspec(overwrite=True):
     """Prepare the solar spectrum used by this package.
 
     Download the STIS reference solar spectrum and convert to the format used by
@@ -101,7 +110,16 @@ def prepare_solarspec():
     This solar spectrum is documented in `Bohlin, Dickinson, & Calzetti 2001,
     AJ, 122, 2118 <https://doi.org/10.1086/323137>`_ and tabulates solar flux
     above the atmosphere.
+
+    Parameters
+    ----------
+    overwrite : bool
+        When True, will overwrite an existing file.
     """
+    path = astropy.utils.data._find_pkg_data_path('../data/solarspec.fits')
+    if not overwrite and os.path.exists(path):
+        print('Solarspec file exists and overwrite is False.')
+        return
     print('Downloading reference solar spectrum...')
     t = astropy.table.Table.read(
         'ftp://ftp.stsci.edu/cdbs/current_calspec/sun_reference_stis_002.fits')
@@ -119,11 +137,14 @@ def prepare_solarspec():
         conv * flux[optical], 'Solar flux above the atmosphere',
         unit='ph / (s cm2 nm)')
     # Save the new table.
-    path = astropy.utils.data._find_pkg_data_path('../data/solarspec.fits')
-    tnew.write(path)
+    tnew.write(path, overwrite=overwrite)
     print(f'Wrote {len(tnew)} rows to {path}')
 
 
-if __name__ == '__main__':
+def main():
     prepare_atmosphere()
     prepare_solarspec()
+
+
+if __name__ == '__main__':
+    main()
