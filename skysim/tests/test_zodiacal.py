@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 
 from ..zodiacal import airmass_zodi, ecl_elong, zodiacal_color_factor, \
@@ -17,7 +16,8 @@ def test_ecl_elong():
     assert ecl_elong(0, 0) == 0
     assert np.array_equal(ecl_elong(np.zeros(3), 0), np.zeros(3))
     assert np.array_equal(ecl_elong(0, np.zeros(2)), np.zeros(2))
-    assert np.array_equal(ecl_elong(np.zeros(3), np.zeros((2, 1))), np.zeros((2, 3)))
+    assert np.array_equal(ecl_elong(np.zeros(3),
+                          np.zeros((2, 1))), np.zeros((2, 3)))
     assert np.allclose(
         np.round(ecl_elong([10, 20, 30], 40), 3),
         [41.026, 43.958, 48.439])
@@ -49,7 +49,7 @@ def test_zodiacal_scattering():
     assert zodiacal_scattering(10 ** 0) == (-2.692, -2.598)
     assert np.allclose(
         zodiacal_scattering([10 ** 2, 10 ** 3]),
-        (np.array([ 0.122,  0.866]), np.array([ 0.02 ,  0.702])))
+        (np.array([0.122, 0.866]), np.array([0.02, 0.702])))
 
 
 def test_get_zodiacal():

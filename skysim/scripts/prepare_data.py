@@ -70,11 +70,11 @@ def prepare_atmosphere(overwrite=True):
             1e3 * t['lam'].data, description='Vacuum wavelength in nm',
             unit='nm')
         tnew['trans_ma'] = astropy.table.Column(
-            t['trans_ma'].data, description=
-            'Zenith transmission fraction for molecular absorption')
+            t['trans_ma'].data,
+            description='Zenith transmission frac for molecular absorption')
         tnew['trans_o3'] = astropy.table.Column(
-            t['trans_o3'].data, description=
-            'Zenith transmission fraction for ozone absorption')
+            t['trans_o3'].data,
+            description='Zenith transmission fraction for ozone absorption')
         # Undo absorption and scattering extinction of airglow.
         ael = t['flux_ael']
         arc = t['flux_arc']
@@ -103,8 +103,8 @@ def prepare_atmosphere(overwrite=True):
 def prepare_solarspec(overwrite=True):
     """Prepare the solar spectrum used by this package.
 
-    Download the STIS reference solar spectrum and convert to the format used by
-    this package by restricting to optical wavelengths (300-1100nm) and save
+    Download the STIS reference solar spectrum and convert to the format used
+    by this package by restricting to optical wavelengths (300-1100nm) and save
     as a binary FITS table.
 
     This solar spectrum is documented in `Bohlin, Dickinson, & Calzetti 2001,

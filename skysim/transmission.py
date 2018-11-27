@@ -62,7 +62,8 @@ def tau0M(lam, lam0=400., k0=0.013, alpha=-1.38):
         Extinction wavelength power.
     """
     lam = 1e-3 * np.asarray(lam)  # convert from nm to um
-    return 0.4 * np.log(10) * k0 * np.power(np.maximum(lam, 1e-3 * lam0), alpha)
+    return 0.4 * np.log(10) * k0 * np.power(
+        np.maximum(lam, 1e-3 * lam0), alpha)
 
 
 def tau0ma(lam):
