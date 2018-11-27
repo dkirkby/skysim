@@ -67,18 +67,18 @@ def tau0M(lam, lam0=400., k0=0.013, alpha=-1.38):
 
 def tau0ma(lam):
     """Calculate zenith optical depth of molecular absorption.
-    
+
     The main absorbers are the molecular oxygen bands (A ~762nm, B ~688nm,
     gamma ~628nm) and water vapor bands (~720nm, 820nm, 940nm).
     See Section 2 and Fig.2 of Noll 2012 for details.
-    
+
     Narrow asorption features are resampled to the requested wavelength
     grid using a flux-conserving algorithm.
-    
+
     Parameters
     ----------
     lam : float or array
-        Wavelength in microns.
+        Wavelength in nanometers.
 
     Returns
     -------
@@ -93,18 +93,18 @@ def tau0ma(lam):
 
 def tau0o3(lam):
     """Calculate zenith optical depth of ozone absorption.
-    
+
     The main features are the Huggins band in the near-UV and the
     broad Chappuis bands around 600nm.
     See Section 2 and Fig.2 of Noll 2012 for details.
-    
+
     Narrow asorption features are resampled to the requested wavelength
     grid using a flux-conserving algorithm.
-    
+
     Parameters
     ----------
     lam : float or array
-        Wavelength in microns.
+        Wavelength in nanometers.
 
     Returns
     -------
