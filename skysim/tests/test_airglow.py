@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from ..airglow import airmass_ag, airglow_scattering
+from ..airglow import airmass_ag, airglow_scattering, get_airglow
 
 
 def test_airmass_ag():
@@ -17,3 +17,10 @@ def test_airglow_scattering():
     assert np.allclose(
         np.round(airglow_scattering([10, 20, 30]), 3),
         [[-0.135, -0.102, -0.045], [-0.307, -0.273, -0.213]])
+
+
+def test_get_airglow():
+    lam = np.linspace(300, 1100, 5)
+    #assert np.allclose(
+    #    np.round(get_airglow(lam, 0), 1),
+    #    0.)
