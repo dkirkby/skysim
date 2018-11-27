@@ -56,7 +56,8 @@ def airglow_scattering(z):
     return fR, fM
 
 
-def get_airglow(lam, z, p=744., H=2.64, Rayleigh=True, Mie=True, absorption=True):
+def get_airglow(lam, z, p=744., H=2.64,
+                Rayleigh=True, Mie=True, absorption=True):
     """Calculate airglow flux.
 
     Parameters
