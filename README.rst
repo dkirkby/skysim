@@ -24,6 +24,8 @@ Implements models described in:
 * Leinert 1998, "The 1997 reference of diffuse night sky brightness",
   `10.1051/aas:1998105 <https://doi.org/10.1051/aas:1998105>`_
 
+The minimum python version for installing this package is 3.6.
+
 License
 -------
 
