@@ -36,7 +36,7 @@ def airglow_scattering(z):
     Negative values are possible and indicate that scattering
     of indirect airglow into the line of sight exceeds scattering
     of direct airglow out of the line of sight.
-    
+
     Parameters
     ----------
     z : float or array
