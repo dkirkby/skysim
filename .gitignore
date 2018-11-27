@@ -58,6 +58,7 @@ distribute-*.tar.gz
 .project
 .pydevproject
 .settings
+v/cache
 
 # Mac OSX
 .DS_Store
