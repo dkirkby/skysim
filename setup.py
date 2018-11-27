@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+# Note: This file needs to be Python 2 / <3.6 compatible, so that the nice
+# "This package only supports Python 3.x+" error prints without syntax errors etc.
 
 import glob
 import os
 import sys
-
-from configparser import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 # Get some values from the setup.cfg
 conf = ConfigParser()
@@ -69,7 +73,7 @@ else:
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP440 compatible (http://www.python.org/dev/peps/pep-0440)
-VERSION = metadata.get('version', '0.0.dev0')
+VERSION = metadata.get('version', '0.0.dev')
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
