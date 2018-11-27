@@ -38,7 +38,7 @@ def ecl_elong(ecl_lon, ecl_lat):
 
     .. math::
 
-        \cos\epsilon = \cos(\lambda - \lambda_\odot) \cos\beta
+        \\cos\\epsilon = \\cos(\\lambda - \\lambda_\\odot) \\cos\\beta
 
     Parameters
     ----------
@@ -59,8 +59,8 @@ def ecl_elong(ecl_lon, ecl_lat):
 def zodiacal_color_factor(lam, elong):
     """Calculate the redenning of the solar spectrum.
 
-   Interpolate in ecliptic longitude between the color factors calculated
-   with equation (22) of Leinert 1998, as described in Section 8.4.2.
+    Interpolate in ecliptic longitude between the color factors calculated
+    with equation (22) of Leinert 1998, as described in Section 8.4.2.
 
     Parameters
     ----------

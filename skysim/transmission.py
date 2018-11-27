@@ -14,9 +14,9 @@ def tau0R(lam, p=744., H=2.64):
 
     .. math::
 
-        \tau_0^R(\lambda) = \frac{p}{1013.25\,\text{hPa}} \left(
-            0.00864 + 6.5\times 10^{-6} \frac{H}{1\,\text{km}}\right)
-        \lambda^{-(0.3916 + 0.074 \lambda + 0.050 / \lambda)} \; .
+        \\tau_0^R(\lambda) = \\frac{p}{1013.25\,\\text{hPa}} \\left(
+        0.00864 + 6.5\\times 10^{-6} \\frac{H}{1\,\\text{km}}\\right)
+        \\lambda^{-(0.3916 + 0.074 \\lambda + 0.050 / \\lambda)}
 
     Automatically broadcasts over any input arrays.
 
@@ -48,7 +48,7 @@ def tau0M(lam, lam0=400., k0=0.013, alpha=-1.38):
 
     .. math::
 
-        k^M(\lambda) = k_0 \lambda^\alpha
+        k^M(\\lambda) = k_0 \\lambda^\\alpha
 
     Parameters
     ----------

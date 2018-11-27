@@ -4,4 +4,8 @@
 Reference/API
 *************
 
-.. automodapi:: skysim
+.. automodapi:: skysim.airglow
+
+.. automodapi:: skysim.transmission
+
+.. automodapi:: skysim.zodiacal
