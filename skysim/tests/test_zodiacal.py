@@ -53,4 +53,4 @@ def test_zodiacal_scattering():
 
 
 def test_get_zodiacal():
-    assert np.allclose(get_zodiacal(500, 20, 20, 10), 813.49718453)
+    assert np.allclose(get_zodiacal(500, 20, 20, 10), 0.48128136)

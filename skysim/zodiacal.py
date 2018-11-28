@@ -6,8 +6,12 @@ import numpy as np
 
 import scipy.interpolate
 
+import astropy.constants
+import astropy.units as u
+
 import skysim.utils.resample
 import skysim.utils.data
+import skysim.utils.convert
 import skysim.transmission
 
 
@@ -214,19 +218,20 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
     Returns
     -------
     float or array
-        Array of fluxes corresponding to each input wavelength, in units of
-        1e-8 W / m2 / sr / um.
+        Array of radiances corresponding to each input wavelength,
+        in units of ph / (arcsec2 m2 s nm).
     """
     lam = np.atleast_1d(lam)
+    # Get the solar flux in 1e-8 W / (m2 sr um).
     sol = skysim.utils.data.get('solarspec')
     sol_lam = sol['wavelength'].data
-    incident_flux = sol['flux'].data.copy()
+    incident_flux = sol['flux'].data * skysim.utils.convert.radiance_to_flux(
+        sol_lam, u.Unit('1e-8 W / (m2 sr um)'))
     if redden:
         # Apply the redenning of the solar spectrum at this (ecl_lon, ecl_lat).
-        # Convert from Angstrom to nm to call zodiacal_color_factor()
         incident_flux *= zodiacal_color_factor(
             sol_lam, ecl_elong(ecl_lon, ecl_lat))
-    # Calculate incident surface brightness at 500nm.
+    # Calculate incident surface brightness at 500nm in 1e-8 W / (m2 sr um).
     flux500 = get_zodiacal_flux500(ecl_lon, ecl_lat)
     # Normalize the redenned solar spectrum.
     incident_flux *= flux500 / np.interp(500., sol_lam, incident_flux)
@@ -245,4 +250,8 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
     if absorption:
         tau0 += skysim.transmission.tau0ma(lam)
     X = airmass_zodi(z)
-    return incident_flux * np.exp(-tau0 * X)
+    # Calulate the flux reaching the surface.
+    surface_flux = incident_flux * np.exp(-tau0 * X)
+    # Convert to radiance at the surface in ph / (arcsec2 m2 s nm).
+    return surface_flux / skysim.utils.convert.radiance_to_flux(
+        lam, u.Unit('1e-8 W / (m2 sr um)'))
