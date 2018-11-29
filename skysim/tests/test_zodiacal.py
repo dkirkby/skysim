@@ -43,6 +43,11 @@ def test_get_zodiacal_flux500():
     assert np.allclose(
         get_zodiacal_flux500([[16, 16], [19, 19]], [[16, 19], [16, 19]]),
         [[1630, 1210], [1390, 1060]])
+    # Scalar input.
+    assert np.isscalar(get_zodiacal_flux500(90, 45))
+    # Broadcasting.
+    assert get_zodiacal_flux500([90, 90], 45).shape == (2,)
+    assert get_zodiacal_flux500([90, 90], [[45]]).shape == (1, 2,)
 
 
 def test_zodiacal_scattering():

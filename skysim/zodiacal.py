@@ -128,6 +128,9 @@ _zodi_interpolator = None
 def get_zodiacal_flux500(ecl_lon, ecl_lat):
     """Return zodical flux at 500nm incident above the atmosphere.
 
+    Automatically broadcasts over ecl_lon and ecl_lat. Return
+    value is scalar when both inputs are scalar.
+
     Parameters
     ----------
     ecl_lon : float or array
@@ -141,11 +144,13 @@ def get_zodiacal_flux500(ecl_lon, ecl_lat):
         Zodiacal flux at 500nm incident above the atmosphere, in units of
         1e-8 W / (m2 sr um).
     """
-    ecl_lon = np.atleast_1d(ecl_lon)
-    if not np.all((ecl_lon >= 0) & (ecl_lon < 360)):
-        raise ValueError('Expected ecl_lon in [0, 360).')
-    wrap = ecl_lon > 180
-    ecl_lon[wrap] = 360 - ecl_lon[wrap]
+    ecl_lon = np.asarray(ecl_lon)
+    ecl_lat = np.asarray(ecl_lat)
+    scalar_input = np.isscalar(ecl_lon + ecl_lat)
+    # Wrap lon to distance from lon=0 in the range [0, 180].
+    ecl_lon = np.fmod(np.abs(ecl_lon), 360)
+    wrap = np.floor(ecl_lon / 180)
+    ecl_lon = wrap * (360 - ecl_lon) + (1 - wrap) * ecl_lon
     assert np.all((ecl_lon >= 0) & (ecl_lon <= 180))
     ecl_lat = np.abs(ecl_lat)
     if not np.all(ecl_lat < 90):
@@ -154,7 +159,8 @@ def get_zodiacal_flux500(ecl_lon, ecl_lat):
     if _zodi_interpolator is None:
         _zodi_interpolator = scipy.interpolate.RectBivariateSpline(
             _zodi_lon, _zodi_beta, _zodi_flux, kx=1, ky=1)
-    return _zodi_interpolator(ecl_lon, ecl_lat, grid=False)
+    flux500 = _zodi_interpolator(ecl_lon, ecl_lat, grid=False)
+    return np.float(flux500) if scalar_input else flux500
 
 
 def zodiacal_scattering(I0):
