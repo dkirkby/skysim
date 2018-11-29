@@ -141,9 +141,15 @@ def get_zodiacal_flux500(ecl_lon, ecl_lat):
         Zodiacal flux at 500nm incident above the atmosphere, in units of
         1e-8 W / (m2 sr um).
     """
-    # TODO:
-    # - Wrap to [0,90], [0,180].
-    # - Check for lon, lat too close to (0, 0).
+    ecl_lon = np.atleast_1d(ecl_lon)
+    if not np.all((ecl_lon >= 0) & (ecl_lon < 360)):
+        raise ValueError('Expected ecl_lon in [0, 360).')
+    wrap = ecl_lon > 180
+    ecl_lon[wrap] = 360 - ecl_lon[wrap]
+    assert np.all((ecl_lon >= 0) & (ecl_lon <= 180))
+    ecl_lat = np.abs(ecl_lat)
+    if not np.all(ecl_lat < 90):
+        raise ValueError('Expected ecl_lat in (-90, 90).')
     global _zodi_interpolator
     if _zodi_interpolator is None:
         _zodi_interpolator = scipy.interpolate.RectBivariateSpline(
