@@ -114,16 +114,19 @@ def resample_binned(edges_out, edges_in, hist_in, axis=-1, zero_pad=True):
         if lo == hi:
             # Output bin is fully embedded within an input bin:
             # give it a linear share.
-            hist_out_rolled[i] = binsize_out[i] / binsize_in[lo - 1] * hist_in_rolled[lo - 1]
+            hist_out_rolled[i] = (
+                binsize_out[i] / binsize_in[lo - 1] * hist_in_rolled[lo - 1])
             continue
         # Calculate fraction of first input bin overlapping this output bin.
         if lo > 0:
-            hist_out_rolled[i] += hist_in_rolled[lo - 1] / binsize_in[lo - 1] * (
-                edges_in[lo] - edges_out[i])
+            hist_out_rolled[i] += (
+                hist_in_rolled[lo - 1] / binsize_in[lo - 1] * (
+                    edges_in[lo] - edges_out[i]))
         # Calculate fraction of last input bin overlaping this output bin.
         if hi <= nin:
-            hist_out_rolled[i] += hist_in_rolled[hi - 1] / binsize_in[hi - 1] * (
-                edges_out[i + 1] - edges_in[hi - 1])
+            hist_out_rolled[i] += (
+                hist_in_rolled[hi - 1] / binsize_in[hi - 1] * (
+                    edges_out[i + 1] - edges_in[hi - 1]))
         # Add input bins fully contained within this output bin.
         if hi > lo + 1:
             hist_out_rolled[i] += np.sum(hist_in_rolled[lo:hi - 1])
