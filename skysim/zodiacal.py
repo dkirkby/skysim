@@ -6,7 +6,6 @@ import numpy as np
 
 import scipy.interpolate
 
-import astropy.constants
 import astropy.units as u
 
 import skysim.utils.resample
@@ -66,6 +65,8 @@ def zodiacal_color_factor(lam, elong):
     Interpolate in ecliptic longitude between the color factors calculated
     with equation (22) of Leinert 1998, as described in Section 8.4.2.
 
+    The output is automatically broadcast over its inputs.
+
     Parameters
     ----------
     lam : float or array
@@ -79,6 +80,7 @@ def zodiacal_color_factor(lam, elong):
     float or array
         The color correction factor(s) to apply to the solar spectrum.
     """
+    elong = np.asarray(elong)
     lam = np.atleast_1d(lam)
     lo = lam <= 500
     hi = lam > 500
@@ -205,7 +207,7 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
 
     Parameters
     ----------
-    lam : float or array
+    lam : float or 1D array
         Wavelength in nanometers.
     ecl_lon : float or array
         Heliocentric ecliptic longitude in degrees.
@@ -213,10 +215,10 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
         Ecliptic latitude in degrees.
     z : float or array
         Zenith angle in degrees, used to calculate airmass.
-    p : float or array
+    p : float
         Pressure at the observation elevation in hPa, used for Rayleigh
         scattering.
-    H : float or array
+    H : float
         Elevation of the observation in km, used for Rayleigh scattering.
     redden : bool
         Apply redenning of solar spectrum.
@@ -234,6 +236,8 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
         in units of ph / (arcsec2 m2 s nm).
     """
     lam = np.atleast_1d(lam)
+    if len(lam.shape) != 1:
+        raise ValueError('Input lam must be scalar or 1D.')
     # Get the solar flux in 1e-8 W / (m2 sr um).
     sol = skysim.utils.data.get('solarspec')
     sol_lam = sol['wavelength'].data
@@ -241,12 +245,18 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
         sol_lam, u.Unit('1e-8 W / (m2 sr um)'))
     if redden:
         # Apply the redenning of the solar spectrum at this (ecl_lon, ecl_lat).
-        incident_flux *= zodiacal_color_factor(
+        # Cannot use *= here since shape will change in general via broadcast.
+        incident_flux = incident_flux * zodiacal_color_factor(
             sol_lam, ecl_elong(ecl_lon, ecl_lat))
     # Calculate incident surface brightness at 500nm in 1e-8 W / (m2 sr um).
     flux500 = get_zodiacal_flux500(ecl_lon, ecl_lat)
+    # Interpolate to find the unnormalized 500nm value.
+    # Use scipy.interpolate instead of np.interp here since incident_flux
+    # will be more than 1D in general.
+    old_flux500 = scipy.interpolate.interp1d(
+        sol_lam, incident_flux, copy=False, assume_sorted=True)([500.])
     # Normalize the redenned solar spectrum.
-    incident_flux *= flux500 / np.interp(500., sol_lam, incident_flux)
+    incident_flux = incident_flux * flux500 / old_flux500
     # Resample to the output wavelength grid.
     incident_flux = skysim.utils.resample.resample_density(
         lam, sol_lam, incident_flux)
