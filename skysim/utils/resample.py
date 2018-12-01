@@ -43,8 +43,8 @@ def centers_to_edges(centers, kind='cubic'):
     return interpolator(edge_idx)
 
 
-def resample_binned(edges_out, edges_in, hist_in, zero_pad=True):
-    """Flux conserving resampler of binned data.
+def resample_binned(edges_out, edges_in, hist_in, axis=-1, zero_pad=True):
+    """Flux conserving linear resampler of binned data.
 
     Parameters
     ----------
@@ -53,7 +53,9 @@ def resample_binned(edges_out, edges_in, hist_in, zero_pad=True):
     edges_in : array
         1D array of N >= 2 input bin edges, in increasing order.
     hist_in : array
-        1D array of N-1 input bin values.
+        Array with N-1 input bin values indexed by the specified axis.
+    axis : int
+        Axis of hist_in used to index input histogram values.
     zero_pad : bool
         When True, allow the output edges to extend beyond the input
         edges and assume that the input histogram is zero outside of
@@ -65,12 +67,17 @@ def resample_binned(edges_out, edges_in, hist_in, zero_pad=True):
     array
         1D array of M-1 resampled bin values.
     """
+    # Check input 1D arrays.
+    edges_out = np.asarray(edges_out)
+    edges_in = np.asarray(edges_in)
+    if edges_out.ndim != 1:
+        raise ValueError('Expected 1D edges_out.')
+    if edges_in.ndim != 1:
+        raise ValueError('Expected 1D edges_in.')
     if len(edges_out) < 2:
         raise ValueError('Need at least one output bin.')
     if len(edges_in) < 2:
         raise ValueError('Need at least one input bin.')
-    if len(hist_in) != len(edges_in) - 1:
-        raise ValueError('Unexpected length of hist_in.')
     binsize_out = np.diff(edges_out)
     if np.any(binsize_out <= 0):
         raise ValueError('Expecting increasing edges_out.')
@@ -83,12 +90,20 @@ def resample_binned(edges_out, edges_in, hist_in, zero_pad=True):
             'Ouput bins extend beyond input bins but zero_pad is False.')
     if (edges_out[0] >= edges_in[-1]) or (edges_out[-1] <= edges_in[0]):
         raise ValueError('Input and output bins do not overlap.')
+    # Check input histogram(s) and put index in axis 0. Note that we
+    # use moveaxis instead of rollaxis since it is easier to invert.
+    hist_in = np.asarray(hist_in)
+    hist_in_rolled = np.moveaxis(hist_in, axis, 0)
+    if len(hist_in_rolled) != len(edges_in) - 1:
+        raise ValueError(
+            'Unexpected length of hist_in along axis {}.'.format(axis))
     # Align output edges to input edges.
     idx = np.searchsorted(edges_in, edges_out)
     # Loop over output bins.
     nin = len(edges_in) - 1
     nout = len(edges_out) - 1
-    hist_out = np.zeros(nout)
+    hist_out_rolled_shape = (nout,) + hist_in_rolled.shape[1:]
+    hist_out_rolled = np.zeros(hist_out_rolled_shape)
     hi = idx[0]
     for i in range(nout):
         lo = hi
@@ -99,24 +114,25 @@ def resample_binned(edges_out, edges_in, hist_in, zero_pad=True):
         if lo == hi:
             # Output bin is fully embedded within an input bin:
             # give it a linear share.
-            hist_out[i] = binsize_out[i] / binsize_in[lo - 1] * hist_in[lo - 1]
+            hist_out_rolled[i] = binsize_out[i] / binsize_in[lo - 1] * hist_in_rolled[lo - 1]
             continue
         # Calculate fraction of first input bin overlapping this output bin.
         if lo > 0:
-            hist_out[i] += hist_in[lo - 1] / binsize_in[lo - 1] * (
+            hist_out_rolled[i] += hist_in_rolled[lo - 1] / binsize_in[lo - 1] * (
                 edges_in[lo] - edges_out[i])
         # Calculate fraction of last input bin overlaping this output bin.
         if hi <= nin:
-            hist_out[i] += hist_in[hi - 1] / binsize_in[hi - 1] * (
+            hist_out_rolled[i] += hist_in_rolled[hi - 1] / binsize_in[hi - 1] * (
                 edges_out[i + 1] - edges_in[hi - 1])
         # Add input bins fully contained within this output bin.
         if hi > lo + 1:
-            hist_out[i] += np.sum(hist_in[lo:hi - 1])
-    return hist_out
+            hist_out_rolled[i] += np.sum(hist_in_rolled[lo:hi - 1])
+    # Return our unrolled output histogram.
+    return np.moveaxis(hist_out_rolled, axis, 0)
 
 
-def resample_density(x_out, x_in, y_in, zero_pad=True):
-    """Flux conserving resampling of density samples.
+def resample_density(x_out, x_in, y_in, axis=-1, zero_pad=True):
+    """Flux conserving linear resampling of density samples.
 
     By "density" we mean that the integral of y(x) is the conserved flux.
 
@@ -137,7 +153,9 @@ def resample_density(x_out, x_in, y_in, zero_pad=True):
     x_in : array
         1D array of N >= 2 input sample locations.
     y_in : array
-        1D array of N input sample densities.
+        Array of N input sample densities indexed by the specified axis.
+    axis : int
+        Axis of y_in used to index input density values.
     zero_pad : bool
         When True, allow the output edges to extend beyond the input
         edges and assume that the input histogram is zero outside of
@@ -149,7 +167,9 @@ def resample_density(x_out, x_in, y_in, zero_pad=True):
     array
         1D array of M output densities.
     """
+    x_in = np.asarray(x_in)
     x_out = np.asarray(x_out)
+    y_in = np.asarray(y_in)
     if len(x_out.shape) == 0 or len(x_out) == 1:
         # Resampling to a single value.
         if not zero_pad and ((x_out < np.min(x_in)) or (x_out > np.max(x_in))):
@@ -159,6 +179,8 @@ def resample_density(x_out, x_in, y_in, zero_pad=True):
         return np.interp(x_out, x_in, y_in, left=0., right=0.)
     edges_out = centers_to_edges(x_out)
     edges_in = centers_to_edges(x_in)
-    hist_in = y_in * np.diff(edges_in)
-    hist_out = resample_binned(edges_out, edges_in, hist_in, zero_pad)
-    return hist_out / np.diff(edges_out)
+    dx_shape = np.ones(y_in.ndim, int)
+    dx_shape[axis] = -1
+    hist_in = y_in * np.diff(edges_in).reshape(dx_shape)
+    hist_out = resample_binned(edges_out, edges_in, hist_in, axis, zero_pad)
+    return hist_out / np.diff(edges_out).reshape(dx_shape)

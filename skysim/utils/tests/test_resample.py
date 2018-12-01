@@ -29,3 +29,21 @@ def test_resample_density():
         [0., 1., 2.], [0.5, 1.5], [1., 1.]), [0.5, 1., 0.5])
     with pytest.raises(ValueError):
         resample_density([0., 1., 2.], [0.5, 1.5], [1., 1.], zero_pad=False)
+
+
+def test_resample_multidim():
+    assert np.allclose(
+        resample_binned([0, 1, 3], [-1, 1, 3], [[1, 1], [4, 4]], axis=0),
+        [[0.5, 0.5], [4., 4.]])
+    assert np.allclose(
+        resample_binned([0, 1, 3], [-1, 1, 3], [[1, 1], [4, 4]], axis=1),
+        [[0.5, 1.], [2., 4.]])
+    assert np.allclose(
+        resample_binned([0, 1, 3], [-1, 1, 3], [[1, 4], [1, 4]], axis=1),
+        [[0.5, 4.], [0.5, 4.]])
+    assert np.allclose(
+        resample_density([0, 1, 3], [-2, 2], [[0, 1], [0, 1]], axis=0),
+        [[0., 1.], [0., 1.], [0., 1.]])
+    assert np.allclose(
+        resample_density([0, 1, 3], [-2, 2], [[0, 1], [0, 1]], axis=1),
+        [[0.5, 1., 1.], [0.5, 1., 1.]])
