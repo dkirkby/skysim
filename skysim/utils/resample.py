@@ -129,7 +129,7 @@ def resample_binned(edges_out, edges_in, hist_in, axis=-1, zero_pad=True):
                     edges_out[i + 1] - edges_in[hi - 1]))
         # Add input bins fully contained within this output bin.
         if hi > lo + 1:
-            hist_out_rolled[i] += np.sum(hist_in_rolled[lo:hi - 1])
+            hist_out_rolled[i] += np.sum(hist_in_rolled[lo:hi - 1], axis=0)
     # Return our unrolled output histogram.
     return np.moveaxis(hist_out_rolled, axis, 0)
 
