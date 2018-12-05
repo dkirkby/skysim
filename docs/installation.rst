@@ -11,4 +11,5 @@ Requirements
 
 * numpy
 * scipy
+* healpy
 * `astropy`_
