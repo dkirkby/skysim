@@ -191,7 +191,7 @@ class AltAzGrid(object):
             expanded_map, az[~data.mask], alt[~data.mask], lonlat=True)
         return data
 
-    def plot(self, grid_data, size=500, label=None, cmap='viridis', ax=None):
+    def plot(self, grid_data, size=500, label=None, cmap='viridis_r', ax=None):
         """ Plot interpolated data on this grid.
 
         Requires that matplotlib is installed.
