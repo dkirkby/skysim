@@ -2,6 +2,7 @@ name: skysim
 
 channels:
     - astropy
+    - conda-forge
 
 dependencies:
     - python=3.6
@@ -10,6 +11,6 @@ dependencies:
     - matplotlib
     - numpy
     - scipy
+    - healpy
     - pip:
         - sphinx-astropy
-        - healpy
