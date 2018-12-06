@@ -31,7 +31,7 @@ class AltAzGrid(object):
         # Calculate the first NEST ring with alt <= min_alt.
         zmin = np.sin(np.deg2rad(min_alt))
         imax = int(np.ceil(nside * (2 - 1.5 * zmin)))
-        # Add an extra ring for interpolation.
+        # Add an extra ring for interpolation near min_alt.
         imax += 1
         # Calculate the corresponding number of pixels in the grid and map.
         self.grid_npix = (imax - nside) * 4 * nside + 2 * nside * (nside - 1)
@@ -92,8 +92,9 @@ class AltAzGrid(object):
                 raise RuntimeError('The obstime is not set.')
             # Initialize the frame.
             self._alt_az_frame = astropy.coordinates.AltAz(
-                az=self._az * u.deg, alt=self._alt * u.deg, obstime=self._obstime,
-                location=self._location, pressure=0, distance=1 * u.Gpc)
+                az=self._az * u.deg, alt=self._alt * u.deg,
+                obstime=self._obstime, location=self._location,
+                pressure=0, distance=1 * u.Gpc)
             # Reset transformed coordinates.
             self._ra_dec_frame = None
             self._ecl_frame = None
@@ -120,7 +121,7 @@ class AltAzGrid(object):
 
     @property
     def ecl_frame(self):
-        """Heliocentric ecliptic frame for current location and observing time."""
+        """Heliocentric ecliptic frame for current location and time."""
         if self._alt_az_frame is None or self._ecl_frame is None:
             self._ecl_frame = self.alt_az_frame.transform_to(
                 astropy.coordinates.HeliocentricTrueEcliptic)
@@ -160,7 +161,7 @@ class AltAzGrid(object):
         Parameters
         ----------
         grid_data : array
-            1D array of ``self.grid_npix`` values associated with the
+            1D array of ``grid_npix`` values associated with the
             healpix centers on our grid.
         size : int
             Size of the returned image data along each axis.
@@ -189,3 +190,119 @@ class AltAzGrid(object):
         data[~data.mask] = healpy.pixelfunc.get_interp_val(
             expanded_map, az[~data.mask], alt[~data.mask], lonlat=True)
         return data
+
+    def plot(self, grid_data, size=500, label=None, cmap='viridis', ax=None):
+        """ Plot interpolated data on this grid.
+
+        Requires that matplotlib is installed.
+
+        Parameters
+        ----------
+        grid_data : array
+            1D array of ``grid_npix`` values associated with healpix centers
+            on our grid.
+        size : int
+            Size of the interpolated image in pixels. Ignored when ``ax`` is
+            specified.
+        label : str or None
+            Label describing the quantity represented by the grid data.
+        cmap : str
+            Name of the matplotlib color map to use.
+        ax : matplotlib axis or None
+            Use the specified axis object or else create one to fit the
+            specified ``size``.
+
+        Returns
+        -------
+        matplotlib axis
+            Axis object used for the plot.
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.patheffects
+
+        # Initialize the axes.
+        if ax is None:
+            # Create axes with space for a vertical colorbar.
+            dpi = 100.
+            width, height = 1.2 * size, size
+            fig = plt.figure(
+                figsize=(width / dpi, height / dpi), dpi=dpi, frameon=False)
+            ax = plt.Axes(fig, [0., 0., 1., 1.])
+            ax.set_axis_off()
+            fig.add_axes(ax)
+        else:
+            # Calculate axis dimensions in pixel units.
+            fig = plt.gcf()
+            (x1, x2), (y1, y2) = ax.get_window_extent().get_points()
+            width, height = x2 - x1, y2 - y1
+            size = min(width, height)
+        fontsize = 0.03 * size
+
+        # Generate an interpolated image of the grid data.
+        image_data = self.get_image_data(grid_data, size)
+
+        pad = 0.01
+        ax.set_xlim(-1 - pad, 1 + pad)
+        ax.set_ylim(-1 - pad, 1 + pad)
+        cmap = plt.get_cmap(cmap)
+        cmap.set_bad('w')
+        img = ax.imshow(
+            image_data, origin='lower', interpolation='none',
+            extent=(-1, +1, -1, +1), aspect='equal', cmap=cmap)
+        plt.axhline(0, c='k', lw=1, ls=':')
+        plt.axvline(0, c='k', lw=1, ls=':')
+        # Add compass labels.
+        effects = [
+            matplotlib.patheffects.Stroke(linewidth=1, foreground='k'),
+            matplotlib.patheffects.Normal()]
+
+        def text(x, y, label, halign, valign):
+            ax.text(x, y, label,
+                    horizontalalignment=halign, verticalalignment=valign,
+                    fontsize=fontsize, fontweight='bold',
+                    color='w').set_path_effects(effects)
+
+        text(0, 0.98, 'N', 'center', 'top')
+        text(0.98, 0, 'E', 'right', 'center_baseline')
+        text(0, -0.98, 'S', 'center', 'baseline')
+        text(-0.98, 0, 'W', 'left', 'center_baseline')
+        # Locate altitude grid lines.
+        if self.min_alt <= 30:
+            alt_spacing = 15
+        elif self.min_alt <= 60:
+            alt_spacing = 10
+        else:
+            alt_spacing = 5
+        alt_grid = np.arange(90, self.min_alt - alt_spacing, -alt_spacing)
+        alt_grid[-1] = self.min_alt
+        alt_grid = alt_grid[1:]
+        # Draw altitude grid lines.
+        n_grid = len(alt_grid)
+        hw = 2 * (90 - alt_grid) / (90 - alt_grid[-1])
+        lw = np.ones(n_grid)
+        ls = [':'] * n_grid
+        # Use thicker outer circle to cover ragged pixel edge.
+        lw[-1] = 3
+        ls[-1] = '-'
+        circles = matplotlib.collections.EllipseCollection(
+            widths=hw, heights=hw, angles=0, offsets=np.zeros((n_grid, 2)),
+            transOffset=ax.transData, units='xy',
+            edgecolors='k', facecolors='none', linewidths=lw, linestyles=ls)
+        ax.add_artist(circles)
+        for alt, r in zip(alt_grid, hw):
+            xy = 0.5 * 0.72 * r
+            ax.text(xy, xy, '{:.0f}$^\circ$'.format(alt), color='k',
+                    fontsize=0.75 * fontsize,
+                    horizontalalignment='left', verticalalignment='baseline')
+        if self.obstime is not None:
+            ax.text(0, 0, 'MJD {:.3f}'.format(self.obstime.mjd),
+                    transform=ax.transAxes, fontsize=0.9 * fontsize, color='k')
+            datetime = self.obstime.datetime.isoformat()
+            ax.text(0, 1, datetime[:10], verticalalignment='top',
+                    transform=ax.transAxes, fontsize=fontsize, color='k')
+            ax.text(0, 0.95, datetime[11:22], verticalalignment='top',
+                    transform=ax.transAxes, fontsize=fontsize, color='k')
+        cb = plt.colorbar(img, ax=ax)
+        if label:
+            cb.set_label(label, fontsize=0.75 * fontsize)
+        return ax
