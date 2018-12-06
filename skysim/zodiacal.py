@@ -191,16 +191,16 @@ def zodiacal_scattering(I0):
     if np.any(I0 < 0):
         raise ValueError('Expected I0 >= 0.')
     nonzero = (I0 > 0)
-    x = np.zeros_like(I0)
+    x = np.zeros(I0.shape, float)
     x[nonzero] = np.log10(I0[nonzero])
     fR = np.zeros_like(x)
-    lo = (x <= 2.244) & (x > 0)
-    hi = (x > 2.244)
+    lo = (x <= 2.244) & nonzero
+    hi = (x > 2.244) & nonzero
     fR[lo] = 1.407 * x[lo] - 2.692
     fR[hi] = 0.527 * x[hi] - 0.715
     fM = np.zeros_like(x)
-    lo = (x <= 2.255) & (x > 0)
-    hi = (x > 2.255)
+    lo = (x <= 2.255) & nonzero
+    hi = (x > 2.255) & nonzero
     fM[lo] = 1.309 * x[lo] - 2.598
     fM[hi] = 0.468 * x[hi] - 0.702
 
