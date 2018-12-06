@@ -177,7 +177,7 @@ def zodiacal_scattering(I0):
     Parameters
     ----------
     I0 : float or array
-        Zodiacal flux in 1e-8 W / (m2 sr um).
+        Zodiacal flux in 1e-8 W / (m2 sr um). All values must be >= 0.
 
     Returns
     -------
@@ -185,16 +185,22 @@ def zodiacal_scattering(I0):
         Tuple (fR, fM) giving the net optical depth multipliers for
         Rayleigh and Mie scattering, respectively.  The components
         fR, fM will be floats or arrays matching the input z shape.
+        Returns zero when I0 is zero.
     """
-    x = np.log10(np.atleast_1d(I0))
-    fR = np.empty_like(x)
-    lo = x <= 2.244
-    hi = ~lo
+    I0 = np.atleast_1d(I0)
+    if np.any(I0 < 0):
+        raise ValueError('Expected I0 >= 0.')
+    nonzero = (I0 > 0)
+    x = np.zeros_like(I0)
+    x[nonzero] = np.log10(I0[nonzero])
+    fR = np.zeros_like(x)
+    lo = (x <= 2.244) & (x > 0)
+    hi = (x > 2.244)
     fR[lo] = 1.407 * x[lo] - 2.692
     fR[hi] = 0.527 * x[hi] - 0.715
-    fM = np.empty_like(x)
-    lo = x <= 2.255
-    hi = ~lo
+    fM = np.zeros_like(x)
+    lo = (x <= 2.255) & (x > 0)
+    hi = (x > 2.255)
     fM[lo] = 1.309 * x[lo] - 2.598
     fM[hi] = 0.468 * x[hi] - 0.702
 
