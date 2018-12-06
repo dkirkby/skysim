@@ -211,6 +211,9 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
                  redden=True, Rayleigh=True, Mie=True, absorption=True):
     """Calculate zodiacal flux.
 
+    Automatically broadcasts over input arrays, but the wavelength
+    input ``lam`` must be 1D and appear in the last axis.
+
     Parameters
     ----------
     lam : float or 1D array

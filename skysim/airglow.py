@@ -60,9 +60,12 @@ def get_airglow(lam, z, p=744., H=2.64,
                 Rayleigh=True, Mie=True, absorption=True):
     """Calculate airglow flux.
 
+    Automatically broadcasts over input arrays, but the wavelength
+    input ``lam`` must be 1D and appear in the last axis.
+
     Parameters
     ----------
-    lam : float or array
+    lam : float or 1D array
         Wavelength in nanometers.
     z : float or array
         Zenith angle(s) in degrees.
@@ -94,8 +97,8 @@ def get_airglow(lam, z, p=744., H=2.64,
     Xag = airmass_ag(z)
     if absorption:
         transmission = atm['trans_ma'].data ** Xag
-        cont *= transmission
-        line *= transmission
+        cont = cont * transmission
+        line = line * transmission
     # Resample to output wavelength grid for scattering calculations.
     ag_lam = atm['wavelength'].data.copy()
     cont = skysim.utils.resample.resample_density(lam, ag_lam, cont)
@@ -103,13 +106,13 @@ def get_airglow(lam, z, p=744., H=2.64,
     # Apply scattering effects.
     if Rayleigh or Mie:
         fR, fM = airglow_scattering(z)
-        tau0 = np.zeros_like(lam)
+        tau0 = np.zeros_like(cont)
         if Rayleigh:
             tau0 += fR * skysim.transmission.tau0R(lam, p, H)
         if Mie:
             tau0 += fM * skysim.transmission.tau0M(lam)
         scattering = np.exp(-tau0 * Xag)
-        cont *= scattering
-        line *= scattering
+        cont = cont * scattering
+        line = line * scattering
 
     return cont, line
