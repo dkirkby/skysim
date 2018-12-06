@@ -63,6 +63,10 @@ def get_airglow(lam, z, p=744., H=2.64,
     Automatically broadcasts over input arrays, but the wavelength
     input ``lam`` must be 1D and appear in the last axis.
 
+    The CPU time scales with the number of unique values in ``z``
+    so calculating on a grid with many duplicates of the same
+    value is relatively efficient (e.g., :class:`skysim.utils.AltAzGrid`).
+
     Parameters
     ----------
     lam : float or 1D array
@@ -89,7 +93,17 @@ def get_airglow(lam, z, p=744., H=2.64,
     """
     lam = np.atleast_1d(lam)
     z = np.asarray(z)
-    # Lookup the unextincted airflow fluxes.
+    z_unique = np.unique(z)
+    if 4 * z_unique.size < 3 * z.size:
+        # Only do the calculation for unique values of z, remembering how
+        # to assemble the output array.
+        z_compressed = True
+        assert z.shape[-1] == 1
+        idx_out = np.searchsorted(z_unique, np.squeeze(z, -1))
+        z = z_unique.reshape(-1, 1)
+    else:
+        z_compressed = False
+    # Lookup the unextincted airglow fluxes.
     atm = skysim.utils.data.get('atmosphere')
     cont = atm['airglow_cont'].data.copy()
     line = atm['airglow_line'].data.copy()
@@ -114,5 +128,10 @@ def get_airglow(lam, z, p=744., H=2.64,
         scattering = np.exp(-tau0 * Xag)
         cont = cont * scattering
         line = line * scattering
+
+    if z_compressed:
+        # Assemble the ouput, repeating values with the same z as necessary.
+        cont = cont[idx_out]
+        line = line[idx_out]
 
     return cont, line

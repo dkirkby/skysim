@@ -24,3 +24,10 @@ def test_get_airglow():
         np.round(get_airglow(lam, 0), 3),
         [[0.035, 0.074, 0.110, 0.293, 0.216],
          [0.005, 0.029, 0.194, 0.814, 1.552]])
+    C, L = get_airglow(lam, np.zeros((3, 1)))
+    assert np.allclose(
+        np.round(C, 3), [0.035, 0.074, 0.110, 0.293, 0.216])
+    assert np.allclose(
+        np.round(L, 3), [0.005, 0.029, 0.194, 0.814, 1.552])
+    C, L = get_airglow(lam, [[0], [10], [20]])
+    assert C.shape == (3, 5)
