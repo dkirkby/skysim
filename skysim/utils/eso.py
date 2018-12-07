@@ -8,7 +8,11 @@ import tempfile
 import hashlib
 import json
 
+import numpy as np
+
 import astropy.table
+import astropy.constants
+import astropy.units as u
 
 
 def call_skycalc(params):
@@ -127,6 +131,21 @@ def get_params(t):
     comments = t.meta['comments']
     idx = comments.index('Input parameters:') + 1
     return json.loads('\n'.join(comments[idx:]))
+
+
+def black_body_radiance(wlen, T, photon_units=True):
+    """Calculate the black body radiance in energy or photon units.
+    """
+    hc = astropy.constants.h * astropy.constants.c
+    # Calculate spectral radiance per wavelength unit in energy units.
+    arg = hc / (wlen * astropy.constants.k_B * T)
+    rad = 2 * hc * astropy.constants.c / wlen ** 5 / (np.exp(arg) - 1) / u.steradian
+    if photon_units:
+        # Convert to radiance in photons.
+        energy_per_photon = (hc / wlen) / u.ph
+        rad = rad / energy_per_photon
+    return rad
+
 
 params = {
     # Used for Table 5 of Noll 2012.
