@@ -1,7 +1,5 @@
 """Utilities for loading and caching package data files.
 """
-import numpy as np
-
 import astropy.table
 import astropy.utils.data
 
