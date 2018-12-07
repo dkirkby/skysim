@@ -127,3 +127,44 @@ def get_params(t):
     comments = t.meta['comments']
     idx = comments.index('Input parameters:') + 1
     return json.loads('\n'.join(comments[idx:]))
+
+params = {
+    # Used for Table 5 of Noll 2012.
+    'Noll2012 Default': dict(
+        airmass=1.0,
+        moon_sun_sep=0.0,
+        moon_target_sep=180.0,
+        moon_alt=-90.0,
+        moon_earth_dist=1.0,
+        ecl_lon=135.0,
+        ecl_lat=90.0,
+        msolflux=130.0,
+        season=0,
+        time=0,
+        vacair='vac',
+        wmin=300.0,
+        wmax=4200.0,
+        wdelta=5.0,
+        observatory='2640',
+    ),
+    # Used for Figures 1, 6, 13, 17 of Noll 2012.
+    # We do not include the thermal emission parameters since
+    # these are not specified in Table 1 (although used in Fig. 1).
+    'Noll2012 Demo Run': dict(
+        airmass=1.003667671798522, # skysim.zodiacal.airmass_zodi(90 - 85.1)
+        moon_sun_sep=77.9,
+        moon_target_sep=51.3,
+        moon_alt=41.3,
+        moon_earth_dist=1.0,
+        ecl_lon=-124.5,
+        ecl_lat=-31.6,
+        msolflux=205.5,
+        season=4,
+        time=3,
+        vacair='air',
+        wmin=300.0,
+        wmax=4200.0,
+        wdelta=5.0,
+        observatory='2640',
+    ),
+}
