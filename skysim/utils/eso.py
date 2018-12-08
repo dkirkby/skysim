@@ -14,6 +14,8 @@ import astropy.table
 import astropy.constants
 import astropy.units as u
 
+import skysim.zodiacal
+
 
 def call_skycalc(params):
     """Call the ESO Advanced Sky Calculator.
@@ -146,6 +148,77 @@ def black_body_radiance(wlen, T, photon_units=True):
         rad = rad / energy_per_photon
     return rad
 
+
+def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
+    """Prepare SkyCalc parameters for a single observation.
+
+    Parameters
+    ----------
+    location : astropy.coordinates.EarthLocation
+        Earth location of the observation.
+    obstime : astropy.time.time
+        Time of the observation.
+    RA : float
+        Right ascension of the telescope pointing in degrees.
+    DEC : float
+        Declination of the telescope pointing in degrees.
+
+    Returns
+    -------
+    dict
+        Dictionary of parameters suitable for calling :func:`get_skycalc`.
+    """
+    # Initialize the pointing, assuming an extragalactic target.
+    pointing = astropy.coordinates.SkyCoord(
+        ra=RA * u.deg, dec=DEC * u.deg, distance=1 * u.Gpc, frame='icrs')
+    # Calculate moon and sun positions.
+    sun = astropy.coordinates.get_sun(obstime)
+    moon = astropy.coordinates.get_moon(obstime)
+    moon_sun = sun.separation(moon)
+    moon_tgt = pointing.separation(moon)
+    # Calculate observer altitude angles, without refraction corrections.
+    observer = astropy.coordinates.AltAz(
+        location=location, obstime=obstime, pressure=0)
+    obs_altaz = pointing.transform_to(observer)
+    moon_altaz = moon.transform_to(observer)
+    airmass = skysim.zodiacal.airmass_zodi(90 - obs_altaz.alt.to(u.deg).value)
+    # Calculate ecliptic coordinates.
+    ecliptic = astropy.coordinates.HeliocentricTrueEcliptic(obstime=obstime)
+    ecl_lonlat = pointing.transform_to(ecliptic)
+    # Ecliptic longitude is measured relative to the sun RA in the range 0-180.
+    ecl_lon = np.fmod(np.abs((ecl_lonlat.lon - sun.ra).to(u.deg).value), 360)
+    wrap = np.floor(ecl_lon / 180)
+    ecl_lon = wrap * (360 - ecl_lon) + (1 - wrap) * ecl_lon
+    # Pick the predefined observatory with the closest elevation.
+    elev = location.height.to(u.m).value
+    closest = np.argmin(
+        [abs(elev - obs[1]) for obs in skysim.utils.eso.observatories])
+    # Build the parameter dictionary.
+    params = dict(
+        airmass=airmass,
+        moon_sun_sep=moon_sun.to(u.deg).value,
+        moon_target_sep=moon_tgt.to(u.deg).value,
+        moon_alt=moon_altaz.alt.to(u.deg).value,
+        moon_earth_dist=1.0,
+        ecl_lon=ecl_lon,
+        ecl_lat=ecl_lonlat.lat.to(u.deg).value,
+        season=0,
+        time=0,
+        vacair='vac',
+        wmin=wmin,
+        wmax=wmax,
+        wdelta=wdelta,
+        # The CLI identifies observatories by height, not by name.
+        observatory=str(observatories[closest][1]),
+    )
+    return params
+
+# Dictionary of predefined model observatories and their elevations in meters.
+observatories = (
+    ('VLT Cerro Paranal', 2640),
+    ('La Silla', 2400),
+    ('3060m', 3060),
+)
 
 params = {
     # Used for Table 5 of Noll 2012.
