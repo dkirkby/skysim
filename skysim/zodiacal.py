@@ -250,7 +250,7 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
     # Get the solar flux in 1e-8 W / (m2 sr um).
     sol = skysim.utils.data.get('solarspec')
     sol_lam = sol['wavelength'].data
-    incident_flux = sol['flux'].data * skysim.utils.convert.radiance_to_flux(
+    incident_flux = sol['flux'].data * skysim.utils.convert.radiance_to_sb(
         sol_lam, u.Unit('1e-8 W / (m2 sr um)'))
     if redden:
         # Apply the redenning of the solar spectrum at this (ecl_lon, ecl_lat).
@@ -284,5 +284,5 @@ def get_zodiacal(lam, ecl_lon, ecl_lat, z, p=744., H=2.64,
     # Calulate the flux reaching the surface.
     surface_flux = incident_flux * np.exp(-tau0 * X)
     # Convert to radiance at the surface in ph / (arcsec2 m2 s nm).
-    return surface_flux / skysim.utils.convert.radiance_to_flux(
+    return surface_flux / skysim.utils.convert.radiance_to_sb(
         lam, u.Unit('1e-8 W / (m2 sr um)'))
