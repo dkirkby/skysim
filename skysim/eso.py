@@ -192,7 +192,7 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
     # Pick the predefined observatory with the closest elevation.
     elev = location.height.to(u.m).value
     closest = np.argmin(
-        [abs(elev - obs[1]) for obs in skysim.utils.eso.observatories])
+        [abs(elev - obs[1]) for obs in skysim.eso.observatories])
     # Build the parameter dictionary.
     params = dict(
         airmass=airmass,
