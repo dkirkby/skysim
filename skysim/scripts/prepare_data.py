@@ -138,7 +138,7 @@ def prepare_solarspec(overwrite=True):
 def main():
     parser = argparse.ArgumentParser(description='Prepare skysim data.')
     parser.add_argument(
-        'dataset', nargs='?', choices=['all', 'atmosphere', 'solar',],
+        'dataset', nargs='?', choices=['all', 'atmosphere', 'solar'],
         default='all', help='datasets to prepare')
     args = parser.parse_args()
     if args.dataset in ('all', 'atmosphere'):

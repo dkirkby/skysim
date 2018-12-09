@@ -69,6 +69,10 @@ class AltAzGrid(object):
             # A new obstime requires a new frame.
             self._alt_az_frame = None
             self._obstime = obstime
+            # Calculate the sun and moon positions at this time
+            # using the default ephemerides.
+            self._sun_radec = astropy.coordinates.get_sun(obstime)
+            self._moon_radec = astropy.coordinates.get_moon(obstime)
 
     @property
     def location(self):
@@ -95,10 +99,45 @@ class AltAzGrid(object):
                 az=self._az * u.deg, alt=self._alt * u.deg,
                 obstime=self._obstime, location=self._location,
                 pressure=0, distance=1 * u.Gpc)
+            # Calculate sun and moon (alt,az) in this frame.
+            self._sun_altaz = self._sun_radec.transform_to(
+                self._alt_az_frame)
+            self._moon_altaz = self._moon_radec.transform_to(
+                self._alt_az_frame)
             # Reset transformed coordinates.
             self._ra_dec_frame = None
             self._ecl_frame = None
         return self._alt_az_frame
+
+    @property
+    def sun_alt(self):
+        """Altitude angle of the sun in degrees."""
+        # Trigger calculation if necessary.
+        _ = self.alt_az_frame
+        return self._sun_altaz.alt.to(u.deg).value
+
+    @property
+    def moon_alt(self):
+        """Altitude angle of the moon in degrees."""
+        # Trigger calculation if necessary.
+        _ = self.alt_az_frame
+        return self._moon_altaz.alt.to(u.deg).value
+
+    @property
+    def moon_phase_angle(self):
+        """Moon phase angle in degrees (0=full, 180=new)."""
+        # Trigger calculation if necessary.
+        _ = self.alt_az_frame
+        elongation = self._sun_radec.separation(self._moon_radec)
+        return np.arctan2(
+            self._sun_radec.distance*np.sin(elongation),
+            self._moon_radec.distance -
+            self._sun_radec.distance * np.cos(elongation)).to(u.deg).value
+
+    @property
+    def moon_illuminated_fraction(self):
+        """Illuminated fraction of the moon (0=new, 1=full)."""
+        return (1 + np.cos(np.deg2rad(self.moon_phase_angle))) / 2.0
 
     @property
     def ra_dec_frame(self):
