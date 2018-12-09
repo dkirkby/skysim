@@ -169,7 +169,7 @@ class AltAzGrid(object):
     @property
     def ecl_lon(self):
         """Heliocentric ecliptic longtitude in degrees for each grid point."""
-        return self.ecl_frame.lon.to(u.deg).value
+        return (self.ecl_frame.lon - self._sun_radec.ra).to(u.deg).value
 
     @property
     def ecl_lat(self):
@@ -230,7 +230,8 @@ class AltAzGrid(object):
             expanded_map, az[~data.mask], alt[~data.mask], lonlat=True)
         return data
 
-    def plot(self, grid_data, size=500, label=None, cmap='viridis_r', ax=None):
+    def plot(self, grid_data, size=500, label=None, cmap='viridis_r',
+             colorbar=True, ax=None):
         """ Plot interpolated data on this grid.
 
         Requires that matplotlib is installed.
@@ -246,7 +247,8 @@ class AltAzGrid(object):
         label : str or None
             Label describing the quantity represented by the grid data.
         cmap : str
-            Name of the matplotlib color map to use.
+            Name of the matplotlib color map to use. The default map displays
+            larger values as darker, so is appropriate for magnitudes.
         ax : matplotlib axis or None
             Use the specified axis object or else create one to fit the
             specified ``size``.
@@ -258,6 +260,8 @@ class AltAzGrid(object):
         """
         import matplotlib.pyplot as plt
         import matplotlib.patheffects
+        import matplotlib.collections
+        import matplotlib.patches
 
         # Initialize the axes.
         if ax is None:
@@ -280,9 +284,12 @@ class AltAzGrid(object):
         # Generate an interpolated image of the grid data.
         image_data = self.get_image_data(grid_data, size)
 
-        pad = 0.01
-        ax.set_xlim(-1 - pad, 1 + pad)
-        ax.set_ylim(-1 - pad, 1 + pad)
+        # Define the projection from (alt, az) in degrees to data space.
+        def project(alt, az):
+            r = np.minimum(1., (90 - alt) / (90 - self.min_alt))
+            return r * np.sin(az), r * np.cos(az)
+
+        # Display the interpolated image.
         cmap = plt.get_cmap(cmap)
         cmap.set_bad('w')
         img = ax.imshow(
@@ -290,6 +297,7 @@ class AltAzGrid(object):
             extent=(-1, +1, -1, +1), aspect='equal', cmap=cmap)
         plt.axhline(0, c='k', lw=1, ls=':')
         plt.axvline(0, c='k', lw=1, ls=':')
+
         # Add compass labels.
         effects = [
             matplotlib.patheffects.Stroke(linewidth=1, foreground='k'),
@@ -305,6 +313,7 @@ class AltAzGrid(object):
         text(0.98, 0, 'E', 'right', 'center_baseline')
         text(0, -0.98, 'S', 'center', 'baseline')
         text(-0.98, 0, 'W', 'left', 'center_baseline')
+
         # Locate altitude grid lines.
         if self.min_alt <= 30:
             alt_spacing = 15
@@ -317,12 +326,14 @@ class AltAzGrid(object):
         alt_grid = alt_grid[1:]
         # Draw altitude grid lines.
         n_grid = len(alt_grid)
-        hw = 2 * (90 - alt_grid) / (90 - alt_grid[-1])
+        r, _ = project(alt_grid, 90)
+        hw = 2 * r
         lw = np.ones(n_grid)
         ls = [':'] * n_grid
-        # Use thicker outer circle to cover ragged pixel edge.
+        # Use an inset thicker outer circle to cover ragged pixel edge.
         lw[-1] = 3
         ls[-1] = '-'
+        hw[-1] = 2 * (1 - 1.5 * lw[-1] / (height - lw[-1]))
         circles = matplotlib.collections.EllipseCollection(
             widths=hw, heights=hw, angles=0, offsets=np.zeros((n_grid, 2)),
             transOffset=ax.transData, units='xy',
@@ -333,15 +344,31 @@ class AltAzGrid(object):
             ax.text(xy, xy, '{:.0f}$^\circ$'.format(alt), color='k',
                     fontsize=0.75 * fontsize,
                     horizontalalignment='left', verticalalignment='baseline')
+
+        # Draw the moon.
+        alt = self.moon_alt
+        az = self._moon_altaz.az.to(u.deg).value
+        x, y = project(alt, az)
+        ax.add_artist(matplotlib.patches.Circle(
+            [x, y], radius=0.05, transform=ax.transData, facecolor='k', lw=0))
+
+        # Add time labels.
         if self.obstime is not None:
             ax.text(0, 0, 'MJD {:.3f}'.format(self.obstime.mjd),
+                    verticalalignment='bottom',
                     transform=ax.transAxes, fontsize=0.9 * fontsize, color='k')
             datetime = self.obstime.datetime.isoformat()
             ax.text(0, 1, datetime[:10], verticalalignment='top',
                     transform=ax.transAxes, fontsize=fontsize, color='k')
             ax.text(0, 0.95, datetime[11:22], verticalalignment='top',
                     transform=ax.transAxes, fontsize=fontsize, color='k')
-        cb = plt.colorbar(img, ax=ax)
-        if label:
-            cb.set_label(label, fontsize=0.75 * fontsize)
+
+        if colorbar:
+            # Plot a colorbar.
+            cb = plt.colorbar(img, ax=ax)        
+            if label:
+                cb.set_label(label, fontsize=0.75 * fontsize)
+
+        ax.set_xlim(-1, 1)
+        ax.set_ylim(-1, 1)
         return ax
