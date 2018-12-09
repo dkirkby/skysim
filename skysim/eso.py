@@ -60,6 +60,7 @@ def call_skycalc(params):
 
 _cache = {}
 
+
 def get_skycalc(params, cache_path=None, verbose=False):
     """Caching frontend to call_skycalc.
 
@@ -78,7 +79,7 @@ def get_skycalc(params, cache_path=None, verbose=False):
     verbose : bool
         Print the comments from this skycalc run when True,
         using :func:`get_comments`.
-    
+
     Returns
     -------
     astropy.table.Table
@@ -141,7 +142,8 @@ def black_body_radiance(wlen, T, photon_units=True):
     hc = astropy.constants.h * astropy.constants.c
     # Calculate spectral radiance per wavelength unit in energy units.
     arg = hc / (wlen * astropy.constants.k_B * T)
-    rad = 2 * hc * astropy.constants.c / wlen ** 5 / (np.exp(arg) - 1) / u.steradian
+    rad = (2 * hc * astropy.constants.c / wlen ** 5 /
+           (np.exp(arg) - 1)) / u.steradian
     if photon_units:
         # Convert to radiance in photons.
         energy_per_photon = (hc / wlen) / u.ph
@@ -213,6 +215,7 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
     )
     return params
 
+
 # Dictionary of predefined model observatories and their elevations in meters.
 observatories = (
     ('VLT Cerro Paranal', 2640),
@@ -243,7 +246,7 @@ params = {
     # We do not include the thermal emission parameters since
     # these are not specified in Table 1 (although used in Fig. 1).
     'Noll2012 Demo Run': dict(
-        airmass=1.003667671798522, # skysim.zodiacal.airmass_zodi(90 - 85.1)
+        airmass=1.003667671798522,  # skysim.zodiacal.airmass_zodi(90 - 85.1)
         moon_sun_sep=77.9,
         moon_target_sep=51.3,
         moon_alt=41.3,
