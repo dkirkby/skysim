@@ -143,7 +143,6 @@ class AltAzGrid(object):
     def ra_dec_frame(self):
         """RA-DEC frame for current location and observing time."""
         if self._alt_az_frame is None or self._ra_dec_frame is None:
-            print('radec')
             self._ra_dec_frame = self.alt_az_frame.transform_to(
                 astropy.coordinates.ICRS)
         return self._ra_dec_frame
