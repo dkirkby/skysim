@@ -4,6 +4,7 @@ import numpy as np
 
 import astropy.coordinates
 import astropy.table
+import astropy.constants
 import astropy.units as u
 
 
@@ -105,3 +106,46 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
     #    obstime.mjd, solar['MJD'].data, solar['FLUX'].data)
 
     return output
+
+
+def nominal_pressure(elevation, airtemp=None):
+    """Calculate the nominal pressure in a standard atmosphere.
+
+    Uses a model with a linear decrease in temperature with
+    elevation from sea level. For details, see
+    https://en.wikipedia.org/wiki/Vertical_pressure_variation
+
+    Parameters
+    ----------
+    elevation : astropy.units.Quantity
+        Elevation above sea level to use.
+    airtemp : astropy.units.Quantity or None
+        Air temperature at the specified elevation to use for
+        the standard atmosphere.  When None, assume 15C
+        at sea level with a constant lapse rate.
+
+    Returns
+    -------
+    astropy.units.Quantity
+        Pressure at the specified elevation in a standard atmosphere.
+    """
+    # The atmosphere constant in astropy < 2.0 was renamed to atm in 2.0.
+    try:
+        P0 = astropy.constants.atm
+    except AttributeError:
+        # Fallback for astropy < 2.0.
+        P0 = astropy.constants.atmosphere
+    g = astropy.constants.g0
+    # Specific gas constant for air.
+    R = 287.053 * u.J / (u.kg * u.K)
+    # Atmospheric lapse rate.
+    L = -6.5e-3 * u.K / u.m
+    if airtemp is None:
+        # Assume 15C at sea level.
+        T0 = (15 * u.deg_C).to(u.K, equivalencies=u.temperature())
+    else:
+        # Convert airtemp to K.
+        T = airtemp.to(u.K, equivalencies=u.temperature())
+        # Estimate corresponding sea-level temperature.
+        T0 = T - L * elevation
+    return P0 * np.power(1 + elevation * L / T0, -g / (L * R))
