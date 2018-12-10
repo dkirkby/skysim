@@ -287,6 +287,7 @@ class AltAzGrid(object):
         # Define the projection from (alt, az) in degrees to data space.
         def project(alt, az):
             r = np.minimum(1., (90 - alt) / (90 - self.min_alt))
+            az = np.deg2rad(az)
             return r * np.sin(az), r * np.cos(az)
 
         # Display the interpolated image.
@@ -349,8 +350,17 @@ class AltAzGrid(object):
         alt = self.moon_alt
         az = self._moon_altaz.az.to(u.deg).value
         x, y = project(alt, az)
+        fc = self.moon_illuminated_fraction * np.ones(4)
         ax.add_artist(matplotlib.patches.Circle(
-            [x, y], radius=0.05, transform=ax.transData, facecolor='k', lw=0))
+            [x, y], radius=0.05, transform=ax.transData, facecolor=fc,
+            edgecolor='k', lw=0.5))
+
+        # Add moon parameter label.
+        label = '{:.0f}% moon {:.0f}$^\circ$'.format(
+            100 * self.moon_illuminated_fraction, self.moon_alt)
+        ax.text(1, 0, label, transform=ax.transAxes,
+                fontsize=0.85 * fontsize, color='k',
+                verticalalignment='bottom', horizontalalignment='right')
 
         # Add time labels.
         if self.obstime is not None:
