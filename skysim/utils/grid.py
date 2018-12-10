@@ -346,6 +346,20 @@ class AltAzGrid(object):
                     fontsize=0.75 * fontsize,
                     horizontalalignment='left', verticalalignment='baseline')
 
+        # Draw the sun.
+        alt = self.sun_alt
+        az = self._sun_altaz.az.to(u.deg).value
+        x, y = project(alt, az)
+        if alt > 0:
+            marker = '*'
+        else:
+            x *= 0.97
+            y *= 0.97
+            # 
+            marker = (3, 0, -az)
+        ax.scatter(x, y, s=125, facecolor='y', edgecolor='k', lw=0.5,
+                   marker=marker, zorder=10)
+
         # Draw the moon.
         alt = self.moon_alt
         az = self._moon_altaz.az.to(u.deg).value
@@ -353,12 +367,16 @@ class AltAzGrid(object):
         fc = self.moon_illuminated_fraction * np.ones(4)
         ax.add_artist(matplotlib.patches.Circle(
             [x, y], radius=0.05, transform=ax.transData, facecolor=fc,
-            edgecolor='k', lw=0.5))
+            edgecolor='k', lw=0.5, zorder=11))
 
-        # Add moon parameter label.
+        # Add sun and moon labels.
         label = '{:.0f}% moon {:.0f}$^\circ$'.format(
             100 * self.moon_illuminated_fraction, self.moon_alt)
         ax.text(1, 0, label, transform=ax.transAxes,
+                fontsize=0.85 * fontsize, color='k',
+                verticalalignment='bottom', horizontalalignment='right')
+        label = 'sun {:.0f}$^\circ$'.format(self.sun_alt)
+        ax.text(1, 0.05, label, transform=ax.transAxes,
                 fontsize=0.85 * fontsize, color='k',
                 verticalalignment='bottom', horizontalalignment='right')
 
