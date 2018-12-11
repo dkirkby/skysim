@@ -4,7 +4,7 @@ import astropy.table
 import astropy.utils.data
 
 
-_cache = {'atmosphere': None, 'solarspec': None}
+_cache = {'atmosphere': None, 'solarspec': None, 'solarflux': None}
 
 
 def get(name, force_load=False):
@@ -31,7 +31,12 @@ def get(name, force_load=False):
         raise ValueError(f'Invalid name: "{name}".')
     cached = _cache.get(name, None)
     if force_load or cached is None:
-        path = astropy.utils.data._find_pkg_data_path(f'../data/{name}.fits')
-        cached = astropy.table.Table.read(path)
+        path = astropy.utils.data._find_pkg_data_path(
+            '../data/{}'.format(name))
+        if name == 'solarflux':
+            cached = astropy.table.Table.read(
+                path + '.ecsv', format='ascii.ecsv')
+        else:
+            cached = astropy.table.Table.read(path + '.fits')
         _cache[name] = cached
     return cached
