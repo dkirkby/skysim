@@ -6,7 +6,7 @@
 # - {name: OBSFLUX, unit: 1e-22 W / (Hz m2), datatype: float32}
 # meta: !!omap
 # - {source: 'http://www.spaceweather.ca/solarflux/sx-5-mavg-en.php'}
-# - {description: 'Observed solar flux at 10.7m, including variations due to solar activity and the earth-sun distance. See http://www.spaceweather.ca/solarflux/sx-3-en.php for details.'}
+# - {description: 'Observed solar flux at 10.7cm, including variations due to solar activity and the earth-sun distance. See http://www.spaceweather.ca/solarflux/sx-3-en.php for details.'}
 # schema: astropy-2.0
 YEAR MONTH OBSFLUX
 1986 1 73.25
