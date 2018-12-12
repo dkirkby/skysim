@@ -2,11 +2,15 @@ import numpy as np
 
 import astropy.coordinates
 import astropy.time
+import astropy.utils
 
 from ..grid import AltAzGrid
 
 
 def test_grid():
+    # Use bundled IERS-B instead of downloading IERS-A.
+    from astropy.utils import iers
+    iers.conf.auto_download = False
     where = astropy.coordinates.EarthLocation.from_geocentric(
         x=-1463969.30185172, y=-5166673.34223433, z=3434985.71204565, unit='m')
     when = astropy.time.Time('2018-01-01T00:00:00', format='isot')
