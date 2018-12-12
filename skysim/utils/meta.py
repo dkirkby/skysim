@@ -25,15 +25,18 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
         One or more observing times when metadata should be calculated.
     pointing : astropy.coordinates.SkyCoord
         The telescope pointing at each input time. Must have the same
-        shape as ``obstime``.
+        shape as ``obstime``. If the coordinates are purely angular, with
+        no distance specified, targets are assumed to be extragalactic
+        for the purposes of calculating ecliptic coordinates.
     location : astropy.coordinates.earth.EarthLocation
         The observatory earth location.
     pressure : astropy.units.Quantity or None
         Atmospheric pressure to use for refraction corrections. When None, use
-        :func:`nominal_pressure`. Set to zero for no refraction corrections.
+        :func:`nominal_pressure`. Set to zero (units optional) for no
+        refraction corrections.
     airtemp : astropy.units.Quantity or None
         Air temperature to use for refraction corrections. Ignored when
-        pressure is zero.
+        ``pressure`` is zero.
     ephemeris : str
         Ephemeris to use for the moon.
 
@@ -100,6 +103,12 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
         moon.separation(pointing).to(u.deg).value, unit='degree',
         description='Moon-pointing opening angle')
     # Calculate the heliocentric ecliptic (lon, lat) in degrees.
+    if not u.m.is_equivalent(pointing.cartesian.x.unit):
+        # Silently assume that targets are extragalactic (1Gpc) for the
+        # purposes of calculating their ecliptic coordinates.
+        pointing = astropy.coordinates.SkyCoord(
+            ra=pointing.ra, dec=pointing.dec, distance=1 * u.Gpc,
+            frame=pointing.frame)
     ecliptic = astropy.coordinates.HeliocentricTrueEcliptic(obstime=obstime)
     ecliptic_lonlat = pointing.transform_to(ecliptic)
     # Longitude is measured relative to the sun RA.
