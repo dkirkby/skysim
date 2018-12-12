@@ -1,5 +1,7 @@
 """Calculate metadata relevant to sky simulations.
 """
+import warnings
+
 import numpy as np
 
 import astropy.coordinates
@@ -7,10 +9,15 @@ import astropy.table
 import astropy.constants
 import astropy.units as u
 
+import skysim.utils.data
+
 
 def get_sky_metadata(obstime, pointing, location, pressure=None,
                      airtemp=None, ephemeris='builtin'):
     """Calculate sky metadata for specified time and pointing.
+
+    Any dates outside the tabulated solarflux data will have their
+    ``solar_flux`` values set to zero.
 
     Parameters
     ----------
@@ -58,6 +65,8 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
         1 + np.cos(np.deg2rad(moon_phase_angle)) / 2.0,
         description='Illuminated fraction (0=new, 1=full)')
     # Define the local observing frame.
+    if pressure is None:
+        pressure = nominal_pressure(location.height, airtemp)
     observer = astropy.coordinates.AltAz(
         location=location, obstime=obstime,
         pressure=pressure, temperature=airtemp)
@@ -101,9 +110,19 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
     output['ecl_lat'] = astropy.table.Column(
         ecliptic_lonlat.lat.to(u.deg).value, unit='degree',
         description='Heliocentric ecliptic latitude of pointing')
-    # Estimate 10.7cm solar flux with zero lag.
-    # output['solar_flux'] = np.interp(
-    #    obstime.mjd, solar['MJD'].data, solar['FLUX'].data)
+    # Lookup monthly average 10.7cm solar flux for each observation.
+    t_solarflux = skysim.utils.data.get('solarflux')
+    month_number = np.array([
+        12 * (D.year - 1986) + (D.month - 1)
+        for D in obstime.reshape(-1).datetime]).reshape(obstime.shape)
+    solarflux = np.zeros(obstime.shape, np.float32)
+    valid = (month_number >= 0) & (month_number < len(t_solarflux))
+    if np.any(~valid):
+        warnings.warn('Some observations are outside tabulated solar flux.')
+    solarflux[valid] = t_solarflux[month_number[valid]]['OBSFLUX']
+    output['solar_flux'] = astropy.table.Column(
+        solarflux, unit=t_solarflux['OBSFLUX'].unit,
+        description='Monthly average observed solar flux at 10.7cm')
 
     return output
 
