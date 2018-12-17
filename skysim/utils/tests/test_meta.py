@@ -19,5 +19,5 @@ def test_meta():
     what = astropy.coordinates.SkyCoord(
         ra=343 * u.deg, dec=15 * u.deg, frame='icrs')
     M = get_sky_metadata(
-        obstime=when, location=where, pointing=what, pressure=0)
+        location=where, obstime=when, pointing=what, pressure=0)
     assert np.allclose(M[0]['solar_flux'], 77.37)

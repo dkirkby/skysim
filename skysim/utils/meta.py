@@ -12,7 +12,7 @@ import astropy.units as u
 import skysim.utils.data
 
 
-def get_sky_metadata(obstime, pointing, location, pressure=None,
+def get_sky_metadata(location, obstime, pointing, pressure=None,
                      airtemp=None, ephemeris='builtin'):
     """Calculate sky metadata for specified time and pointing.
 
@@ -21,6 +21,8 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
 
     Parameters
     ----------
+    location : astropy.coordinates.earth.EarthLocation
+        The observatory earth location.
     obstime : astropy.time.Time
         One or more observing times when metadata should be calculated.
     pointing : astropy.coordinates.SkyCoord
@@ -28,8 +30,6 @@ def get_sky_metadata(obstime, pointing, location, pressure=None,
         shape as ``obstime``. If the coordinates are purely angular, with
         no distance specified, targets are assumed to be extragalactic
         for the purposes of calculating ecliptic coordinates.
-    location : astropy.coordinates.earth.EarthLocation
-        The observatory earth location.
     pressure : astropy.units.Quantity or None
         Atmospheric pressure to use for refraction corrections. When None, use
         :func:`nominal_pressure`. Set to zero (units optional) for no
