@@ -19,6 +19,9 @@ def get_sky_metadata(location, obstime, pointing, pressure=None,
     Any dates outside the tabulated solarflux data will have their
     ``solar_flux`` values set to zero.
 
+    The ``obstime`` and ``pointing`` inputs must have compatible
+    shapes for broadcasting.
+
     Parameters
     ----------
     location : astropy.coordinates.earth.EarthLocation
@@ -26,10 +29,9 @@ def get_sky_metadata(location, obstime, pointing, pressure=None,
     obstime : astropy.time.Time
         One or more observing times when metadata should be calculated.
     pointing : astropy.coordinates.SkyCoord
-        The telescope pointing at each input time. Must have the same
-        shape as ``obstime``. If the coordinates are purely angular, with
-        no distance specified, targets are assumed to be extragalactic
-        for the purposes of calculating ecliptic coordinates.
+        The telescope pointing at each input time. If the coordinates are
+        purely angular, with no distance specified, targets are assumed to
+        be extragalactic for the purposes of calculating ecliptic coordinates.
     pressure : astropy.units.Quantity or None
         Atmospheric pressure to use for refraction corrections. When None, use
         :func:`nominal_pressure`. Set to zero (units optional) for no
@@ -46,13 +48,16 @@ def get_sky_metadata(location, obstime, pointing, pressure=None,
         Table of computed sky metadata for each (time, pointing) observed from
         the specified location.
     """
-    if obstime.shape != pointing.shape:
-        raise ValueError('Arrays obstime and pointing have different shapes.')
+    try:
+        out = np.broadcast(obstime, pointing)
+    except ValueError:
+        raise ValueError('obstime and pointing have incompatible shapes.')
     output = astropy.table.Table()
     # Calculate apparent local sidereal time in degrees.
+    lst = np.atleast_1d(obstime.sidereal_time(
+        'apparent', longitude=location.lon).to(u.deg).value)
     output['lst'] = astropy.table.Column(
-        np.atleast_1d(obstime.sidereal_time(
-            'apparent', longitude=location.lon).to(u.deg).value),
+        np.broadcast_to(lst, out.shape),
         unit='degree', description='Apparent local sidereal time')
     # Get the positions of the sun and moon at each time.
     sun = astropy.coordinates.get_sun(obstime)

@@ -39,14 +39,15 @@ class AltAzGrid(object):
         # Calculate and save the (alt, az) angles at each healpix center.
         self._az, self._alt = healpy.pixelfunc.pix2ang(
             nside, np.arange(self.grid_npix), lonlat=True)
-        # Initialize an AltAz frame for coordinate transformations.
-        self._location = location
-        self._obstime = obstime
         # Coordinate transformations are calculated on demand.
         self._alt_az_frame = None
         self._ra_dec_frame = None
         self._ecl_frame = None
         self._gal_frame = None
+        self._location = None
+        self.location = location
+        self._obstime = None
+        self.obstime = obstime
 
     @property
     def alt(self):
