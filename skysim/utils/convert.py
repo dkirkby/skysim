@@ -15,6 +15,18 @@ radiance_unit = u.Unit('ph / (arcsec2 m2 s nm)')
 
 def radiance_to_sb(lam, sb_unit):
     """Convert radiance units ph / (arcsec2 m2 s nm) to surface-brightness units.
+
+    Parameters
+    ----------
+    lam : array or float
+        Wavelength(s) in nanometers.
+    sb_unit : astropy.units.Quantity
+        Output surface brightness units.
+
+    Returns
+    -------
+    array or float
+        Conversion factor for each input wavelength.
     """
     global _lam, _flux, _cache
 
