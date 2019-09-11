@@ -86,6 +86,7 @@ def get_skycalc(params, cache_path=None, verbose=False):
         Table of output results.
     """
     t = None
+    name = None
     # Create a hash of the requested parameters to use as a ~unique key.
     key = hashlib.md5(repr(params).encode('utf8')).hexdigest()
     # Is this request already cached in memory?
