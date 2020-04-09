@@ -15,6 +15,7 @@ import astropy.constants
 import astropy.units as u
 
 import skysim.zodiacal
+import skysim.utils.data
 
 
 def call_skycalc(params):
@@ -192,6 +193,15 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
     ecl_lon = np.fmod(np.abs((ecl_lonlat.lon - sun.ra).to(u.deg).value), 360)
     wrap = np.floor(ecl_lon / 180)
     ecl_lon = wrap * (360 - ecl_lon) + (1 - wrap) * ecl_lon
+    # Lookup the tabulated solar flux for this month or use the median
+    # for dates outside the tabulated range.
+    t_solarflux = skysim.utils.data.get('solarflux')
+    D = obstime.datetime
+    month_number = 12 * (D.year - 1986) + (D.month - 1)
+    if month_number < 0 or month_number >= len(t_solarflux):
+        msoflux = np.median(t_solarflux['OBSFLUX'])
+    else:
+        msoflux = t_solarflux[month_number]['OBSFLUX']
     # Pick the predefined observatory with the closest elevation.
     elev = location.height.to(u.m).value
     closest = np.argmin(
@@ -205,6 +215,7 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
         moon_earth_dist=1.0,
         ecl_lon=ecl_lon,
         ecl_lat=ecl_lonlat.lat.to(u.deg).value,
+        msoflux=msoflux,
         season=0,
         time=0,
         vacair='vac',
