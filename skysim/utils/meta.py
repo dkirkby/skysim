@@ -70,7 +70,7 @@ def get_sky_metadata(location, obstime, pointing, pressure=None,
         moon.distance - sun.distance*np.cos(elongation)
         ).to(u.deg).value
     output['moon_illum_frac'] = astropy.table.Column(
-        1 + np.cos(np.deg2rad(moon_phase_angle)) / 2.0,
+        (1 + np.cos(np.deg2rad(moon_phase_angle))) / 2.0,
         description='Illuminated fraction (0=new, 1=full)')
     # Define the local observing frame.
     if pressure is None:
