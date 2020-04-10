@@ -153,7 +153,8 @@ def black_body_radiance(wlen, T, photon_units=True):
     return rad
 
 
-def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
+def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1,
+                   ephemeris='builtin', pressure=0, temperature=0):
     """Prepare SkyCalc parameters for a single observation.
 
     Parameters
@@ -166,6 +167,21 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
         Right ascension of the telescope pointing in degrees.
     DEC : float
         Declination of the telescope pointing in degrees.
+    wmin : float
+        Minimum wavelength for tabulated results in nm.
+    wmax : float
+        Maximum wavelength for tabulated results in nm.
+    wldeta : float
+        Wavelength bin size for tabulated results in nm.
+    ephemeris : str
+        Ephemeris to use for moon position.  Should either be
+        ``builtin`` or ``jpl`` (slower, more accurate).
+    pressure : zero or astropy.units.Quantity
+        Barometric air pressure to use for (ra,dec) to (alt,az) transforms.
+        A zero value indicates that no refraction corrections should be applied.
+    temperature : zero or astropy.units.Quantity
+        Ambient air temperature to use for (ra,dec) to (alt,az) transforms.
+        Ignored unless pressure is non zero.
 
     Returns
     -------
@@ -177,15 +193,22 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
         ra=RA * u.deg, dec=DEC * u.deg, distance=1 * u.Gpc, frame='icrs')
     # Calculate moon and sun positions.
     sun = astropy.coordinates.get_sun(obstime)
-    moon = astropy.coordinates.get_moon(obstime)
+    moon = astropy.coordinates.get_moon(obstime, ephemeris=ephemeris)
     moon_sun = sun.separation(moon)
-    moon_tgt = pointing.separation(moon)
-    # Calculate observer altitude angles, without refraction corrections.
+    # Transform to observer (alt,az) coordinates.
     observer = astropy.coordinates.AltAz(
-        location=location, obstime=obstime, pressure=0)
+        location=location, obstime=obstime, pressure=pressure, temperature=temperature)
     obs_altaz = pointing.transform_to(observer)
+    sun_altaz = sun.transform_to(observer)
     moon_altaz = moon.transform_to(observer)
-    airmass = skysim.zodiacal.airmass_zodi(90 - obs_altaz.alt.to(u.deg).value)
+    rho = obs_altaz.separation(moon_altaz).to(u.deg).value
+    #airmass = skysim.zodiacal.airmass_zodi(90 - obs_altaz.alt.to(u.deg).value)
+    # Need to use this definition to match how skycalc converts back to zenith angle to
+    # check that abs(z - zmoon) <= rho <= abs(z + zmoon)
+    z = 90 - obs_altaz.alt.to(u.deg).value
+    zmoon = 90 - moon_altaz.alt.to(u.deg).value
+    assert abs(z - zmoon) <= rho <= abs(z + zmoon)
+    airmass = 1 / np.cos(np.deg2rad(z))
     # Calculate ecliptic coordinates.
     ecliptic = astropy.coordinates.HeliocentricTrueEcliptic(obstime=obstime)
     ecl_lonlat = pointing.transform_to(ecliptic)
@@ -206,22 +229,23 @@ def prepare_params(location, obstime, RA, DEC, wmin=300, wmax=1100, wdelta=1):
     elev = location.height.to(u.m).value
     closest = np.argmin(
         [abs(elev - obs[1]) for obs in skysim.eso.observatories])
-    # Build the parameter dictionary.
+    # Build the parameter dictionary. Values must be python types for serialization
+    # so convert numpy floats.
     params = dict(
-        airmass=airmass,
-        moon_sun_sep=moon_sun.to(u.deg).value,
-        moon_target_sep=moon_tgt.to(u.deg).value,
-        moon_alt=moon_altaz.alt.to(u.deg).value,
+        airmass=float(airmass),
+        moon_sun_sep=float(moon_sun.to(u.deg).value),
+        moon_target_sep=float(rho),
+        moon_alt=float(moon_altaz.alt.to(u.deg).value),
         moon_earth_dist=1.0,
-        ecl_lon=ecl_lon,
-        ecl_lat=ecl_lonlat.lat.to(u.deg).value,
-        msoflux=msoflux,
+        ecl_lon=float(ecl_lon),
+        ecl_lat=float(ecl_lonlat.lat.to(u.deg).value),
+        msolflux=float(msoflux),
         season=0,
         time=0,
         vacair='vac',
-        wmin=wmin,
-        wmax=wmax,
-        wdelta=wdelta,
+        wmin=float(wmin),
+        wmax=float(wmax),
+        wdelta=float(wdelta),
         # The CLI identifies observatories by height, not by name.
         observatory=str(observatories[closest][1]),
     )
